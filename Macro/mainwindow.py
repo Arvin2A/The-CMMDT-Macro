@@ -234,7 +234,7 @@ class Ui_MainWindow(object):
         self.stopbutton.setText(QCoreApplication.translate("MainWindow", u"Stop (Control + X)", None))
         self.consolebutton.setText(QCoreApplication.translate("MainWindow", u"Console", None))
         self.runbutton.setText(QCoreApplication.translate("MainWindow", u"Start Macro", None))
-        self.TheTab.setTabText(self.TheTab.indexOf(self.maincontrols), QCoreApplication.translate("MainWindow", u"Tab 1", None))
-        self.TheTab.setTabText(self.TheTab.indexOf(self.AdvancedSettings), QCoreApplication.translate("MainWindow", u"Tab 2", None))
+        self.TheTab.setTabText(self.TheTab.indexOf(self.maincontrols), QCoreApplication.translate("MainWindow", u"Main Settings", None))
+        self.TheTab.setTabText(self.TheTab.indexOf(self.AdvancedSettings), QCoreApplication.translate("MainWindow", u"Advanced Settings", None))
     # retranslateUi
 
