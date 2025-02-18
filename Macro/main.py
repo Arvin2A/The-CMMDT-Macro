@@ -83,29 +83,12 @@ class MainWindow(QMainWindow):
         self.macro_runner = MacroRunner(self.sikulix_path)
         self.macro_runner.output_received.connect(self.update_console)
         self.macro_runner.start()
-    def start_macro(self):
-        print("Start Macro button clicked!")
-        if self.sikulix_path != "":
-            data = {
-                "CastDuration": self.ui.castduration.value(),
-                "ShakeEnabled": self.ui.skipshake.isChecked(),
-                "ShakeSpeed": self.ui.latency.value(),
-                "ShowVisualIndicators": self.ui.visual_indicators.isChecked(),
-                "Control": self.ui.control.value(),
-            }
-            with open("Macro\macro.sikuli\data.json","w") as f:
-                json.dump(data,f,indent=4)
-            self.ui.runbutton.setEnabled(False)
-            self.process = subprocess.Popen(["java", "-jar", self.sikulix_path, "-r", "Macro/macro.sikuli", "-c", "-v"])
-            self.ui.stopbutton.setEnabled(True)
-        else:
-            self.show_error_dialog("Can't run without a path to SikuliX Jar!")
     def stop_macro(self):
-        if self.process:
-            self.process.terminate()
-            self.process.wait()
+        if self.macro_runner:
+            self.macro_runner.terminate()
+            self.macro_runner.wait()
             print("Terminated")
-            self.process = None
+            self.macro_runner = None
             self.ui.stopbutton.setEnabled(False)
             self.ui.runbutton.setEnabled(True)
             self.ui.consolebutton.setEnabled(False)
