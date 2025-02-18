@@ -17,8 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QDoubleSpinBox, QFrame,
     QHBoxLayout, QLabel, QMainWindow, QPushButton,
-    QSizePolicy, QSpacerItem, QStatusBar, QVBoxLayout,
-    QWidget)
+    QSizePolicy, QSpacerItem, QStatusBar, QTabWidget,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -37,15 +37,20 @@ class Ui_MainWindow(object):
         font.setBold(True)
         self.label.setFont(font)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.frameone = QFrame(self.centralwidget)
+        self.TheTab = QTabWidget(self.centralwidget)
+        self.TheTab.setObjectName(u"TheTab")
+        self.TheTab.setGeometry(QRect(0, 30, 451, 321))
+        self.maincontrols = QWidget()
+        self.maincontrols.setObjectName(u"maincontrols")
+        self.frameone = QFrame(self.maincontrols)
         self.frameone.setObjectName(u"frameone")
-        self.frameone.setGeometry(QRect(20, 40, 201, 301))
+        self.frameone.setGeometry(QRect(10, 20, 221, 261))
         self.frameone.setFrameShape(QFrame.Shape.StyledPanel)
         self.frameone.setFrameShadow(QFrame.Shadow.Raised)
         self.frameone.setLineWidth(1)
         self.verticalLayoutWidget_3 = QWidget(self.frameone)
         self.verticalLayoutWidget_3.setObjectName(u"verticalLayoutWidget_3")
-        self.verticalLayoutWidget_3.setGeometry(QRect(0, 0, 201, 301))
+        self.verticalLayoutWidget_3.setGeometry(QRect(0, 0, 201, 251))
         self.mainlayout1 = QVBoxLayout(self.verticalLayoutWidget_3)
         self.mainlayout1.setObjectName(u"mainlayout1")
         self.mainlayout1.setContentsMargins(5, 0, 0, 0)
@@ -153,15 +158,15 @@ class Ui_MainWindow(object):
 
         self.mainlayout1.addItem(self.verticalSpacer)
 
-        self.frametwo = QFrame(self.centralwidget)
+        self.frametwo = QFrame(self.maincontrols)
         self.frametwo.setObjectName(u"frametwo")
-        self.frametwo.setGeometry(QRect(240, 40, 201, 301))
+        self.frametwo.setGeometry(QRect(230, 20, 211, 271))
         self.frametwo.setFrameShape(QFrame.Shape.StyledPanel)
         self.frametwo.setFrameShadow(QFrame.Shadow.Raised)
         self.frametwo.setLineWidth(1)
         self.verticalLayoutWidget_4 = QWidget(self.frametwo)
         self.verticalLayoutWidget_4.setObjectName(u"verticalLayoutWidget_4")
-        self.verticalLayoutWidget_4.setGeometry(QRect(0, 0, 201, 301))
+        self.verticalLayoutWidget_4.setGeometry(QRect(0, 0, 201, 251))
         self.mainlayout2 = QVBoxLayout(self.verticalLayoutWidget_4)
         self.mainlayout2.setSpacing(5)
         self.mainlayout2.setObjectName(u"mainlayout2")
@@ -201,12 +206,19 @@ class Ui_MainWindow(object):
 
         self.mainlayout2.addWidget(self.runbutton)
 
+        self.TheTab.addTab(self.maincontrols, "")
+        self.AdvancedSettings = QWidget()
+        self.AdvancedSettings.setObjectName(u"AdvancedSettings")
+        self.TheTab.addTab(self.AdvancedSettings, "")
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
+
+        self.TheTab.setCurrentIndex(0)
+
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
@@ -222,5 +234,7 @@ class Ui_MainWindow(object):
         self.stopbutton.setText(QCoreApplication.translate("MainWindow", u"Stop (Control + X)", None))
         self.consolebutton.setText(QCoreApplication.translate("MainWindow", u"Console", None))
         self.runbutton.setText(QCoreApplication.translate("MainWindow", u"Start Macro", None))
+        self.TheTab.setTabText(self.TheTab.indexOf(self.maincontrols), QCoreApplication.translate("MainWindow", u"Tab 1", None))
+        self.TheTab.setTabText(self.TheTab.indexOf(self.AdvancedSettings), QCoreApplication.translate("MainWindow", u"Tab 2", None))
     # retranslateUi
 
