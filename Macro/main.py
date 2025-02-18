@@ -3,6 +3,7 @@ from console import Ui_Console
 from PySide6.QtWidgets import QApplication, QWidget, QFileDialog, QMessageBox, QMainWindow, QTextEdit
 from PySide6.QtCore import QFile, Signal
 from installjava import Install
+from handler import MacroRunner
 import sys
 import os
 import subprocess
@@ -30,8 +31,9 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.runbutton.clicked.connect(self.start_macro)
+        self.ui.runbutton.clicked.connect(self.start_macro2)
         self.ui.stopbutton.clicked.connect(self.stop_macro)
+        self.macro_runner = None
         self.sikulix_path = "Macro/sikulix.jar"
         self.load_data()
         #console
@@ -51,10 +53,13 @@ class MainWindow(QMainWindow):
         if not self.console.isVisible():
             self.console.show()
         else:
-            self.console.hide()    
+            self.console.hide()   
+    def update_console(self, text):
+        """Update console log widget with new output."""
+        self.console_widget.append(text) 
     def load_data(self):
         try:
-            with open("Macro\macro.sikuli\data.json","r") as w:
+            with open("Macro/macro.sikuli/data.json","r") as w:
                 data = json.load(w)
                 self.ui.castduration.setValue(data.get("CastDuration"))
                 self.ui.skipshake.setChecked(data.get("ShakeEnabled"))
@@ -71,6 +76,13 @@ class MainWindow(QMainWindow):
         error_dialog.setInformativeText(message)
         error_dialog.setStandardButtons(QMessageBox.Ok)  # Only "OK" button
         error_dialog.exec()    
+    def start_macro2(self):
+        """Start the macro and update the console."""
+        if self.macro_runner and self.macro_runner.isRunning():
+            return
+        self.macro_runner = MacroRunner(self.sikulix_path)
+        self.macro_runner.output_received.connect(self.update_console)
+        self.macro_runner.start()
     def start_macro(self):
         print("Start Macro button clicked!")
         if self.sikulix_path != "":
