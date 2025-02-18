@@ -29,6 +29,7 @@ except Exception as e:
 TimeEachLoop = 5
 Latency = data["ShakeSpeed"] # this is if ur computer is very laggy, mine is so it is half a second for each shake
 ShakeEnabled = data["ShakeEnabled"] # Enable if you have hasty enchant
+ClickShake = True
 running = True      
 #COLORS FOR FISCH DETECTION (WHITE_BAR, GREY_FISH_BAR)
 Sets = {
@@ -247,12 +248,11 @@ def Catch():
         i += 1
         
         print("-----------------TEST-----------------")
-        exit()
         targetbarColor = Sets["Color_Fish"]
         userbarColor = Sets["Color_White"]
         target_x,target_y = search(targetbarColor, ReelingRegion)
-        #bar_x,bar_y = search(userbarColor, ReelingRegion) 
-        bar_x,bar_y = find_bar_by_color(ReelingRegion, result)
+        bar_x,bar_y = search(userbarColor, ReelingRegion) 
+        #bar_x,bar_y = find_bar_by_length(ReelingRegion, result)
 
         if target_x != 0:
             frame_target.setLocation(target_x, target_y)
@@ -282,7 +282,7 @@ def Catch():
         if bar_x != 0:
             frame_bar.setLocation(int(bar_x),int(bar_y))
             bar_x,bar_y = search(Sets["Color_Bar"], ReelingRegion)
-            bar_x += round(ControlResult * 0.5) 
+            #bar_x += round(result * 0.5) 
             last_valid_bar_x = bar_x 
         if time.time() - start_time > timeout:
             print("Loop timed out. Exiting...")
@@ -300,20 +300,45 @@ def Catch():
     frame_bar.dispose() 
     frame_target.dispose()
     return  
-def Shake():
+def ClickShake():
+    global Latency
     screen = Screen()
-    while True:   
+    while True: 
+        userbarColor = Sets["Color_Fish"]
+        x,y = search(userbarColor, ReelingRegion)
         shake = Pattern(Pattern("better_shake.png").similar(0.50)).similar(0.50)
         if exists(shake):
             try:  
                 click(shake)
             except:         
                 wait(Latency)
+        elif x != 0:
+            print("CATCHING")
+            isShaking = False
+            return True
         else:
             print("FAILED")
             isShaking = False
             return True
     return True
+def NavigationShake():
+    global Latency
+    userbarColor = Sets["Color_Fish"]
+    x,y = search(userbarColor, ReelingRegion)
+    screen = Screen()
+    while True:
+        type(Key.PAGE_DOWN)
+        shake = Pattern(Pattern("better_shake.png").similar(0.50)).similar(0.50)
+        if exists(shake):
+            type(Key.ENTER) 
+            wait(Latency)
+        elif x != 0:
+            print("CATCHING")
+            return True
+        else:
+            print("FAILED")
+            isShaking = False
+            return True
 while(running):
     App.focus("Roblox")
     mouseDown(Button.LEFT)
@@ -322,8 +347,10 @@ while(running):
     wait(0.5)
     isShaking = True
     #WARNING: SHAKE ONLY WORKS WITH RESOLUTIONS 1920x1200 AS OF NOW. DONT USE SHAKE UNLESS YOU HAVE THIS RESOLUTION!
-    if not ShakeEnabled:
-        hasFinishedShake = Shake()
+    if not ShakeEnabled and ClickShake:
+        hasFinishedShake = ClickShake()
+    elif not ShakeEnabled and not ClickShake:
+        hasFinishedShake = NavigationShake()
     else:
         hasFinishedShake = True
     if hasFinishedShake == True:
