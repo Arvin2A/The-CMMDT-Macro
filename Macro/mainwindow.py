@@ -44,7 +44,7 @@ class Ui_MainWindow(object):
         self.maincontrols.setObjectName(u"maincontrols")
         self.frameone = QFrame(self.maincontrols)
         self.frameone.setObjectName(u"frameone")
-        self.frameone.setGeometry(QRect(10, 20, 221, 261))
+        self.frameone.setGeometry(QRect(10, 20, 201, 251))
         self.frameone.setFrameShape(QFrame.Shape.StyledPanel)
         self.frameone.setFrameShadow(QFrame.Shadow.Raised)
         self.frameone.setLineWidth(1)
