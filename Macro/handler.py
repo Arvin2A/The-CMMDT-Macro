@@ -1,5 +1,5 @@
 from PySide6.QtCore import QThread, Signal
-import subprocess
+import subprocess, os
 
 class MacroRunner(QThread):
     output_received = Signal(str)
@@ -12,6 +12,8 @@ class MacroRunner(QThread):
     def run(self):
         """Run the SikuliX macro and capture its output."""
         try:
+            if os.name == "posix" and "darwin" in os.uname().sysname.lower():
+                subprocess.run(["xattr", "-rd", "com.apple.quarantine", self.sikulix_path])
             self.process = subprocess.Popen(
                 ["java", "-jar", self.sikulix_path, "-r", "Macro/macro.sikuli", "-c", "-v"],
                 stdout=subprocess.PIPE,
@@ -32,5 +34,5 @@ class MacroRunner(QThread):
     def stop(self):
         """Terminate the macro subprocess."""
         if self.process:
-            self.process.terminate()
+            self.process.kill()
             self.wait()
