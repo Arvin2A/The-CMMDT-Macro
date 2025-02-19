@@ -4,6 +4,6 @@
     "ShakeSpeed": 0.5,
     "ShowVisualIndicators": true,
     "Control": 0.18,
-    "ClickShake": true,
-    "IsLinux": false
+    "ClickShake": false,
+    "IsLinux": true
 }

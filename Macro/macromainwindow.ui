@@ -88,7 +88,7 @@
          <x>0</x>
          <y>0</y>
          <width>201</width>
-         <height>251</height>
+         <height>252</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="mainlayout1">
@@ -106,6 +106,13 @@
          <widget class="QCheckBox" name="clickshake">
           <property name="text">
            <string>Enable Click Shake</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="islinux">
+          <property name="text">
+           <string>Linux Enabled</string>
           </property>
          </widget>
         </item>

@@ -21,16 +21,19 @@ Settings.ActionLogs=0
 Debug.on(3)
 data = None
 try:
-    with open('Macro\macro.sikuli\data.json', 'r') as file:
+    with open('Macro/macro.sikuli/data.json', 'r') as file:
         data = json.load(file)
 except Exception as e:
     print("Error:",e)
 #How much time you want for the next shake. Ex. how much time you think will take to catch
+roblox = "Roblox"
 TimeEachLoop = 5
 Latency = data["ShakeSpeed"] # this is if ur computer is very laggy, mine is so it is half a second for each shake
 ShakeEnabled = data["ShakeEnabled"] # Enable if you have hasty enchant
 ClickShake = data["ClickShake"]
 IsLinux = data["IsLinux"]
+if IsLinux:
+    roblox = "Sober"
 running = True      
 #COLORS FOR FISCH DETECTION (WHITE_BAR, GREY_FISH_BAR)
 Sets = {
@@ -46,10 +49,10 @@ def runHotKey(event):
     running = False
 #In this case, this is CTRL+X which is if you want to stop the program (stop after any sequence, not in between)
 Env.addHotkey("x",KeyModifier.CTRL,runHotKey)    
-r = switchApp("Roblox")
-ch = App("Roblox")
+r = switchApp(roblox)
+ch = App(roblox)
 #SCALING SIZES FOR COMPATIBILITY
-RobloxWindowRegion = Region(App("Roblox").focusedWindow())
+RobloxWindowRegion = Region(App(roblox).focusedWindow())
 ReferenceResolution = [1440,875]
 UR = [RobloxWindowRegion.w,RobloxWindowRegion.h]
 sf = [float(UR[0])/1920.0,float(UR[1])/1200.0]
@@ -307,7 +310,7 @@ def ClickShake():
     while True: 
         userbarColor = Sets["Color_Fish"]
         x,y = search(userbarColor, ReelingRegion)
-        shake = Pattern(Pattern("better_shake.png").similar(0.50)).similar(0.50)
+        shake = Pattern("better_shake.png").similar(0.50)
         if exists(shake):
             try:  
                 click(shake)
@@ -329,7 +332,7 @@ def NavigationShake():
     screen = Screen()
     while True:
         type(Key.PAGE_DOWN)
-        shake = Pattern(Pattern("better_shake.png").similar(0.50)).similar(0.50)
+        shake = Pattern("better_shake.png").similar(0.50)
         if exists(shake):
             type(Key.ENTER) 
             wait(Latency)
@@ -341,7 +344,7 @@ def NavigationShake():
             isShaking = False
             return True
 while(running):
-    App.focus("Roblox")
+    App.focus(roblox)
     mouseDown(Button.LEFT)
     wait(data["CastDuration"])
     mouseUp(Button.LEFT)

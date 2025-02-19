@@ -50,7 +50,7 @@ class Ui_MainWindow(object):
         self.frameone.setLineWidth(1)
         self.verticalLayoutWidget_3 = QWidget(self.frameone)
         self.verticalLayoutWidget_3.setObjectName(u"verticalLayoutWidget_3")
-        self.verticalLayoutWidget_3.setGeometry(QRect(0, 0, 201, 251))
+        self.verticalLayoutWidget_3.setGeometry(QRect(0, 0, 201, 252))
         self.mainlayout1 = QVBoxLayout(self.verticalLayoutWidget_3)
         self.mainlayout1.setObjectName(u"mainlayout1")
         self.mainlayout1.setContentsMargins(5, 0, 0, 0)
@@ -63,6 +63,11 @@ class Ui_MainWindow(object):
         self.clickshake.setObjectName(u"clickshake")
 
         self.mainlayout1.addWidget(self.clickshake)
+
+        self.islinux = QCheckBox(self.verticalLayoutWidget_3)
+        self.islinux.setObjectName(u"islinux")
+
+        self.mainlayout1.addWidget(self.islinux)
 
         self.visual_indicators = QCheckBox(self.verticalLayoutWidget_3)
         self.visual_indicators.setObjectName(u"visual_indicators")
@@ -233,6 +238,7 @@ class Ui_MainWindow(object):
         self.label.setText(QCoreApplication.translate("MainWindow", u"CMMDT Fisch Macro Panel (ALPHA)", None))
         self.skipshake.setText(QCoreApplication.translate("MainWindow", u"Skip Shake", None))
         self.clickshake.setText(QCoreApplication.translate("MainWindow", u"Enable Click Shake", None))
+        self.islinux.setText(QCoreApplication.translate("MainWindow", u"Linux Enabled", None))
         self.visual_indicators.setText(QCoreApplication.translate("MainWindow", u"Show visual indicators", None))
         self.castdurationlabel.setText(QCoreApplication.translate("MainWindow", u"Cast Duration:", None))
         self.latencylabel.setText(QCoreApplication.translate("MainWindow", u"Shake Speed:", None))
@@ -240,7 +246,7 @@ class Ui_MainWindow(object):
         self.stopbutton.setText(QCoreApplication.translate("MainWindow", u"Stop (Control + X)", None))
         self.consolebutton.setText(QCoreApplication.translate("MainWindow", u"Console", None))
         self.runbutton.setText(QCoreApplication.translate("MainWindow", u"Start Macro", None))
-        self.TheTab.setTabText(self.TheTab.indexOf(self.maincontrols), QCoreApplication.translate("MainWindow", u"Tab 1", None))
-        self.TheTab.setTabText(self.TheTab.indexOf(self.AdvancedSettings), QCoreApplication.translate("MainWindow", u"Tab 2", None))
+        self.TheTab.setTabText(self.TheTab.indexOf(self.maincontrols), QCoreApplication.translate("MainWindow", u"Main Controls", None))
+        self.TheTab.setTabText(self.TheTab.indexOf(self.AdvancedSettings), QCoreApplication.translate("MainWindow", u"Advanced Settings", None))
     # retranslateUi
 

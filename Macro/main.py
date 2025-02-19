@@ -68,6 +68,8 @@ class MainWindow(QMainWindow):
                 self.ui.latency.setValue(data.get("ShakeSpeed"))
                 self.ui.visual_indicators.setChecked(data.get("ShowVisualIndicators"))
                 self.ui.control.setValue(data.get("Control"))
+                self.ui.clickshake.setChecked(data.get("ClickShake"))
+                self.ui.islinux.setChecked(data.get("IsLinux"))
         except FileNotFoundError as e:
             self.show_error_dialog(f"data.json doesnt exist! See: {e}")
     def show_error_dialog(self, message):
@@ -82,6 +84,21 @@ class MainWindow(QMainWindow):
         """Start the macro and update the console."""
         if self.macro_runner and self.macro_runner.isRunning():
             return
+        print("Start Macro button clicked!")
+        if self.sikulix_path != "":
+            data = {
+                "CastDuration": self.ui.castduration.value(),
+                "ShakeEnabled": self.ui.skipshake.isChecked(),
+                "ShakeSpeed": self.ui.latency.value(),
+                "ShowVisualIndicators": self.ui.visual_indicators.isChecked(),
+                "Control": self.ui.control.value(),
+                "ClickShake": self.ui.clickshake.isChecked(),
+                "IsLinux": self.ui.islinux.isChecked()
+            }
+            with open("Macro\macro.sikuli\data.json","w") as f:
+                json.dump(data,f,indent=4)
+                f.flush()
+            self.ui.runbutton.setEnabled(False)
         self.macro_runner = MacroRunner(self.sikulix_path)
         self.macro_runner.output_received.connect(self.update_console)
         self.macro_runner.start()
@@ -93,7 +110,6 @@ class MainWindow(QMainWindow):
             self.macro_runner = None
             self.ui.stopbutton.setEnabled(False)
             self.ui.runbutton.setEnabled(True)
-            self.ui.consolebutton.setEnabled(False)
 if __name__ == "__main__":
     install = Install()
     if install.check():
