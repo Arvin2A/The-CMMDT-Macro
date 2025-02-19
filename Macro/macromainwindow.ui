@@ -103,6 +103,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="clickshake">
+          <property name="text">
+           <string>Enable Click Shake</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="visual_indicators">
           <property name="text">
            <string>Show visual indicators</string>

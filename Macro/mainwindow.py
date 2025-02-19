@@ -59,6 +59,11 @@ class Ui_MainWindow(object):
 
         self.mainlayout1.addWidget(self.skipshake, 0, Qt.AlignmentFlag.AlignTop)
 
+        self.clickshake = QCheckBox(self.verticalLayoutWidget_3)
+        self.clickshake.setObjectName(u"clickshake")
+
+        self.mainlayout1.addWidget(self.clickshake)
+
         self.visual_indicators = QCheckBox(self.verticalLayoutWidget_3)
         self.visual_indicators.setObjectName(u"visual_indicators")
 
@@ -227,6 +232,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"CMMDT Fisch Macro Panel (ALPHA)", None))
         self.skipshake.setText(QCoreApplication.translate("MainWindow", u"Skip Shake", None))
+        self.clickshake.setText(QCoreApplication.translate("MainWindow", u"Enable Click Shake", None))
         self.visual_indicators.setText(QCoreApplication.translate("MainWindow", u"Show visual indicators", None))
         self.castdurationlabel.setText(QCoreApplication.translate("MainWindow", u"Cast Duration:", None))
         self.latencylabel.setText(QCoreApplication.translate("MainWindow", u"Shake Speed:", None))
@@ -234,7 +240,7 @@ class Ui_MainWindow(object):
         self.stopbutton.setText(QCoreApplication.translate("MainWindow", u"Stop (Control + X)", None))
         self.consolebutton.setText(QCoreApplication.translate("MainWindow", u"Console", None))
         self.runbutton.setText(QCoreApplication.translate("MainWindow", u"Start Macro", None))
-        self.TheTab.setTabText(self.TheTab.indexOf(self.maincontrols), QCoreApplication.translate("MainWindow", u"Main Settings", None))
-        self.TheTab.setTabText(self.TheTab.indexOf(self.AdvancedSettings), QCoreApplication.translate("MainWindow", u"Advanced Settings", None))
+        self.TheTab.setTabText(self.TheTab.indexOf(self.maincontrols), QCoreApplication.translate("MainWindow", u"Tab 1", None))
+        self.TheTab.setTabText(self.TheTab.indexOf(self.AdvancedSettings), QCoreApplication.translate("MainWindow", u"Tab 2", None))
     # retranslateUi
 

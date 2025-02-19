@@ -29,7 +29,8 @@ except Exception as e:
 TimeEachLoop = 5
 Latency = data["ShakeSpeed"] # this is if ur computer is very laggy, mine is so it is half a second for each shake
 ShakeEnabled = data["ShakeEnabled"] # Enable if you have hasty enchant
-ClickShake = True
+ClickShake = data["ClickShake"]
+IsLinux = data["IsLinux"]
 running = True      
 #COLORS FOR FISCH DETECTION (WHITE_BAR, GREY_FISH_BAR)
 Sets = {
