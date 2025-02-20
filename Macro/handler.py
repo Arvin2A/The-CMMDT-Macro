@@ -1,8 +1,8 @@
-from PyQt5.QtCore import QThread, pyqtSignal
+from PySide6.QtCore import QThread, Signal
 import subprocess, os, urllib.request, requests
 
 class MacroRunner(QThread):
-    output_received = pyqtSignal(str)
+    output_received = Signal(str)
 
     def __init__(self, macro_dir="Macro", sikulix_url=None, parent=None):
         super().__init__(parent)
