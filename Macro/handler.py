@@ -1,19 +1,40 @@
-from PySide6.QtCore import QThread, Signal
-import subprocess, os
+from PyQt5.QtCore import QThread, pyqtSignal
+import subprocess, os, urllib.request, requests
 
 class MacroRunner(QThread):
-    output_received = Signal(str)
+    output_received = pyqtSignal(str)
 
-    def __init__(self, sikulix_path, parent=None):
+    def __init__(self, macro_dir="Macro", sikulix_url=None, parent=None):
         super().__init__(parent)
-        self.sikulix_path = sikulix_path
+        self.macro_dir = macro_dir
+        self.sikulix_url = sikulix_url or "https://launchpad.net/sikuli/sikulix/2.0.5/+download/sikulixide-2.0.5.jar"
+        self.sikulix_path = os.path.join(self.macro_dir, "sikulix.jar")
         self.process = None
+    def download_sikulix(self):
+        """Download SikuliX JAR if it doesn't exist."""
+        if not os.path.exists(self.macro_dir):
+            os.makedirs(self.macro_dir)  # Create Macro directory if missing
 
+        if not os.path.exists(self.sikulix_path):
+            self.output_received.emit("Downloading SikuliX...")
+            try:
+                response = requests.get(self.sikulix_url, stream=True)
+                response.raise_for_status()
+
+                with open(self.sikulix_path, "wb") as file:
+                    for chunk in response.iter_content(1024):
+                        file.write(chunk)
+
+                self.output_received.emit("Download complete!")
+            except requests.exceptions.RequestException as e:
+                self.output_received.emit(f"Download failed: {e}")
+                return False
+        return True
     def run(self):
         """Run the SikuliX macro and capture its output."""
+        if not self.download_sikulix():
+            return
         try:
-            if os.name == "posix" and "darwin" in os.uname().sysname.lower():
-                subprocess.run(["xattr", "-rd", "com.apple.quarantine", self.sikulix_path])
             self.process = subprocess.Popen(
                 ["java", "-jar", self.sikulix_path, "-r", "Macro/macro.sikuli", "-c", "-v"],
                 stdout=subprocess.PIPE,
@@ -34,5 +55,5 @@ class MacroRunner(QThread):
     def stop(self):
         """Terminate the macro subprocess."""
         if self.process:
-            self.process.kill()
+            self.process.terminate()
             self.wait()
