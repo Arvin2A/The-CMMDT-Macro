@@ -9,6 +9,13 @@ import os
 import subprocess
 import json
 import time
+# Get the directory where main.py is located
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_FILE = os.path.join(BASE_DIR, "macro.sikuli", "data.json")
+if os.path.exists(DATA_FILE):
+    print("File found!")
+else:
+    print("File NOT found!")
 print("E")
 #####UI MAIN SCRIPT, SEE MACRO.SIKULIX/MACRO.PY FOR MACRO CONTROLS (MUST EDIT WITH SIKULIX IDE)#####
 data = {
@@ -37,7 +44,7 @@ class MainWindow(QMainWindow):
         self.ui.runbutton.clicked.connect(self.start_macro2)
         self.ui.stopbutton.clicked.connect(self.stop_macro)
         self.macro_runner = None
-        self.sikulix_path = "Macro/sikulix.jar"
+        self.sikulix_path = os.path.join(BASE_DIR, "sikulix.jar")
         self.load_data()
         self.jsonpath = "Macro/macro.sikuli\data.json"
         #console
@@ -63,7 +70,7 @@ class MainWindow(QMainWindow):
         self.console_widget.append(text) 
     def load_data(self):
         try:
-            with open("Macro/macro.sikuli/data.json","r") as w:
+            with open(DATA_FILE,"r") as w:
                 data = json.load(w)
                 self.ui.castduration.setValue(data.get("CastDuration"))
                 self.ui.skipshake.setChecked(data.get("ShakeEnabled"))
@@ -109,7 +116,7 @@ class MainWindow(QMainWindow):
                 "IsLinux": self.ui.islinux.isChecked()
             }
             try:
-                with open("Macro\macro.sikuli\data.json","w") as f:
+                with open(DATA_FILE,"w") as f:
                     json.dump(data,f,indent=4)
                     f.flush()
             except:
@@ -120,12 +127,13 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     self.show_error_dialog(f"Failed to save data. Error: {e}")
             self.ui.runbutton.setEnabled(False)
-        self.macro_runner = MacroRunner(self.sikulix_path)
+            self.ui.stopbutton.setEnabled(True)
+        self.macro_runner = MacroRunner()
         self.macro_runner.output_received.connect(self.update_console)
         self.macro_runner.start()
     def stop_macro(self):
         if self.macro_runner:
-            self.macro_runner.terminate()
+            self.macro_runner.stop()
             self.macro_runner.wait()
             print("Terminated")
             self.macro_runner = None
@@ -143,5 +151,6 @@ if __name__ == "__main__":
 
     window = MainWindow()
     window.show()
-    
+    if window.macro_runner:
+        window.macro_runner.stop()
     sys.exit(app.exec())

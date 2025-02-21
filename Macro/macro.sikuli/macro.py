@@ -1,4 +1,4 @@
-import time
+import time, os
 import math
 import sys
 #sys.path.append("Lib")
@@ -15,22 +15,37 @@ from org.opencv.imgproc import Imgproc
 from java.awt.image import BufferedImage
 from javax.swing import JFrame
 from java.awt import Color
+from java.io import FileNotFoundException
 print("Loaded Imports")
 Settings.MoveMouseDelay = 0.01
 Settings.ActionLogs=0
 Debug.on(3)
 data = None
+script_dir = os.getcwd()
+data_file = os.path.join(script_dir, "data.json")
+if os.path.exists(data_file):
+    print("exists")
+else:
+    raise FileNotFoundException("File not found: data.json")
 try:
-    with open('Macro/macro.sikuli/data.json', 'r') as file:
+    with open(data_file, 'r') as file:
         data = json.load(file)
-except Exception as e:
-    print("Error:",e)
+except:
+    try:
+        with open('macro.sikuli/data.json', 'r') as file:
+            data = json.load(file) 
+    except:
+        try:
+            with open('data.json', 'r') as file:
+                data = json.load(file) 
+        except Exception as e:
+            print("Error:",e)
 #How much time you want for the next shake. Ex. how much time you think will take to catch
 roblox = "Roblox"
 TimeEachLoop = 5
 Latency = data["ShakeSpeed"] # this is if ur computer is very laggy, mine is so it is half a second for each shake
 ShakeEnabled = data["ShakeEnabled"] # Enable if you have hasty enchant
-ClickShake = data["ClickShake"]
+isClickShake = data["ClickShake"]
 IsLinux = data["IsLinux"]
 if IsLinux:
     roblox = "Sober"
@@ -306,9 +321,9 @@ def Catch():
     return  
 def ClickShake():
     global Latency
+    userbarColor = Sets["Color_Fish"]
     screen = Screen()
     while True: 
-        userbarColor = Sets["Color_Fish"]
         x,y = search(userbarColor, ReelingRegion)
         shake = Pattern("better_shake.png").similar(0.50)
         if exists(shake):
@@ -328,9 +343,10 @@ def ClickShake():
 def NavigationShake():
     global Latency
     userbarColor = Sets["Color_Fish"]
-    x,y = search(userbarColor, ReelingRegion)
     screen = Screen()
+    type("\\")
     while True:
+        x,y = search(userbarColor, ReelingRegion)
         type(Key.PAGE_DOWN)
         shake = Pattern("better_shake.png").similar(0.50)
         if exists(shake):
@@ -338,6 +354,7 @@ def NavigationShake():
             wait(Latency)
         elif x != 0:
             print("CATCHING")
+            type("\\")
             return True
         else:
             print("FAILED")
@@ -351,9 +368,9 @@ while(running):
     wait(0.5)
     isShaking = True
     #WARNING: SHAKE ONLY WORKS WITH RESOLUTIONS 1920x1200 AS OF NOW. DONT USE SHAKE UNLESS YOU HAVE THIS RESOLUTION!
-    if not ShakeEnabled and ClickShake:
+    if not ShakeEnabled and isClickShake:
         hasFinishedShake = ClickShake()
-    elif not ShakeEnabled and not ClickShake:
+    elif not ShakeEnabled and not isClickShake:
         hasFinishedShake = NavigationShake()
     else:
         hasFinishedShake = True

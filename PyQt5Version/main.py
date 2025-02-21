@@ -16,6 +16,8 @@ data = {
     "ShowVisualIndicators": True,
     "ShakeSpeed": 0.5,
     "Control": 0.0,
+    "ClickShake": True,
+    "IsLinux": False
 }
 class ConsoleOutput:
     def __init__(self, text_edit: QTextEdit):
