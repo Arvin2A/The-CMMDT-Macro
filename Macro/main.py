@@ -38,6 +38,7 @@ class MainWindow(QMainWindow):
         self.macro_runner = None
         self.sikulix_path = "Macro/sikulix.jar"
         self.load_data()
+        self.jsonpath = "Macro/macro.sikuli\data.json"
         #console
         self.console = QWidget()
         self.consoleui = Ui_Console()
@@ -70,8 +71,19 @@ class MainWindow(QMainWindow):
                 self.ui.control.setValue(data.get("Control"))
                 self.ui.clickshake.setChecked(data.get("ClickShake"))
                 self.ui.islinux.setChecked(data.get("IsLinux"))
-        except FileNotFoundError as e:
-            self.show_error_dialog(f"data.json doesnt exist! See: {e}")
+        except:
+            try:
+                with open("macro.sikuli/data.json","r") as w:
+                    data = json.load(w)
+                    self.ui.castduration.setValue(data.get("CastDuration"))
+                    self.ui.skipshake.setChecked(data.get("ShakeEnabled"))
+                    self.ui.latency.setValue(data.get("ShakeSpeed"))
+                    self.ui.visual_indicators.setChecked(data.get("ShowVisualIndicators"))
+                    self.ui.control.setValue(data.get("Control"))
+                    self.ui.clickshake.setChecked(data.get("ClickShake"))
+                    self.ui.islinux.setChecked(data.get("IsLinux"))
+            except Exception as e:
+                self.show_error_dialog(f"data.json doesnt exist! See: {e}")
     def show_error_dialog(self, message):
         error_dialog = QMessageBox(self)
         error_dialog.setIcon(QMessageBox.Critical)  # Critical icon for error
@@ -95,9 +107,17 @@ class MainWindow(QMainWindow):
                 "ClickShake": self.ui.clickshake.isChecked(),
                 "IsLinux": self.ui.islinux.isChecked()
             }
-            with open("Macro\macro.sikuli\data.json","w") as f:
-                json.dump(data,f,indent=4)
-                f.flush()
+            try:
+                with open("Macro\macro.sikuli\data.json","w") as f:
+                    json.dump(data,f,indent=4)
+                    f.flush()
+            except:
+                try:
+                    with open("macro.sikuli\data.json","w") as f:
+                        json.dump(data,f,indent=4)
+                        f.flush()
+                except Exception as e:
+                    self.show_error_dialog(f"Failed to save data. Error: {e}")
             self.ui.runbutton.setEnabled(False)
         self.macro_runner = MacroRunner(self.sikulix_path)
         self.macro_runner.output_received.connect(self.update_console)
