@@ -4,9 +4,9 @@ import subprocess, os, urllib.request, requests
 class MacroRunner(QThread):
     output_received = Signal(str)
 
-    def __init__(self, macro_dir="Macro", sikulix_url=None, parent=None):
+    def __init__(self, sikulix_url=None, parent=None):
         super().__init__(parent)
-        self.macro_dir = macro_dir
+        self.macro_dir = os.path.join(os.path.dirname(__file__), "sikulix.jar")
         self.sikulix_url = sikulix_url or "https://launchpad.net/sikuli/sikulix/2.0.5/+download/sikulixide-2.0.5.jar"
         self.sikulix_path = os.path.join(self.macro_dir, "sikulix.jar")
         self.process = None
@@ -32,15 +32,18 @@ class MacroRunner(QThread):
         return True
     def run(self):
         """Run the SikuliX macro and capture its output."""
+        macrodirabspath = os.path.abspath(os.path.join(os.path.dirname(__file__), "macro.sikuli"))
         if not self.download_sikulix():
             return
         try:
+            os.chdir(os.path.dirname(__file__))
             self.process = subprocess.Popen(
-                ["java", "-jar", self.sikulix_path, "-r", "Macro/macro.sikuli", "-c", "-v"],
+                ["java", "-jar", self.sikulix_path, "-r", macrodirabspath, "-c", "-v"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                bufsize=1
+                bufsize=1,
+                cwd=macrodirabspath
             )
 
             for line in self.process.stdout:
@@ -55,5 +58,5 @@ class MacroRunner(QThread):
     def stop(self):
         """Terminate the macro subprocess."""
         if self.process:
-            self.process.terminate()
+            self.process.kill()
             self.wait()

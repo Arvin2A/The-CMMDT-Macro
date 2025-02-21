@@ -1,9 +1,9 @@
 {
     "CastDuration": 1.0,
-    "ShakeEnabled": true,
+    "ShakeEnabled": false,
     "ShakeSpeed": 0.5,
     "ShowVisualIndicators": true,
     "Control": 0.18,
     "ClickShake": false,
-    "IsLinux": true
+    "IsLinux": false
 }
