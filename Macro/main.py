@@ -9,6 +9,7 @@ import os
 import subprocess
 import json
 import time
+print("E")
 #####UI MAIN SCRIPT, SEE MACRO.SIKULIX/MACRO.PY FOR MACRO CONTROLS (MUST EDIT WITH SIKULIX IDE)#####
 data = {
     "ShakeEnabled": True,
