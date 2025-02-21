@@ -1,25 +1,17 @@
-import time, os
-import math
-import sys
-#sys.path.append("Lib")
-import json
+import time, os, math, sys, json
 from java.lang import System
 from nu.pattern import OpenCV
-from java.io import FileReader
-from java.lang import String
 OpenCV.loadShared()
-from sikuli import *
+#from sikuli import *
 from org.opencv.core import Mat, Scalar, Core, CvType, Size, MatOfPoint
 from org.opencv.imgcodecs import Imgcodecs
 from org.opencv.imgproc import Imgproc
 from java.awt.image import BufferedImage
 from javax.swing import JFrame
 from java.awt import Color
-from java.io import FileNotFoundException
-print("Loaded Imports")
 Settings.MoveMouseDelay = 0.01
 Settings.ActionLogs=0
-Debug.on(3)
+#Debug.on(3)
 data = None
 script_dir = os.getcwd()
 data_file = os.path.join(script_dir, "data.json")
@@ -91,7 +83,7 @@ def create_overlay(color, width=20, height=35):
     frame.getContentPane().setBackground(color)
     frame.setVisible(True)
     return frame
-def find_bar_by_length(region, expected_width, tolerance=10):
+def find_bar(region):
     screen = Screen()
     try:
         captured_image = screen.capture(region)
@@ -99,50 +91,50 @@ def find_bar_by_length(region, expected_width, tolerance=10):
         height = buffered_image.getHeight()
         width = buffered_image.getWidth()
 
+        # Convert BufferedImage to Mat
         mat_image = Mat(height, width, CvType.CV_8UC3)
         raster = buffered_image.getRaster()
         for x in range(width):
             for y in range(height):
                 r, g, b = raster.getPixel(x, y, None)[:3]
-                data = [float(b), float(g), float(r)]
-                mat_image.put(y, x, data)
+                mat_image.put(y, x, [float(b), float(g), float(r)])
 
+        # Convert to grayscale
         gray = Mat()
         Imgproc.cvtColor(mat_image, gray, Imgproc.COLOR_BGR2GRAY)
 
-
+        # Apply threshold to isolate the bar
         thresh = Mat()
         Imgproc.threshold(gray, thresh, 200, 255, Imgproc.THRESH_BINARY)
 
+        # Find contours
         contours = java.util.ArrayList()
         hierarchy = Mat()
         Imgproc.findContours(thresh, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
 
-        best_bar = None
-        min_diff = float("inf")
-
+        # Find the largest contour (assuming it's the bar)
+        largest_contour = None
+        max_area = 0
 
         for contour in contours:
-            rect = Imgproc.boundingRect(contour)
-            rect_width = rect.width
+            area = Imgproc.contourArea(contour)
+            if area > max_area:
+                max_area = area
+                largest_contour = contour
 
-            if abs(rect_width - expected_width) <= tolerance:
-                diff = abs(rect_width - expected_width)
-                if diff < min_diff:
-                    min_diff = diff
-                    best_bar = rect
+        # If a valid bar is found
+        if largest_contour:
+            rect = Imgproc.boundingRect(largest_contour)
+            bar_x = region.x + rect.x + (rect.width // 2)  # Center X
+            bar_y = region.y + rect.y + (rect.height // 2)  # Center Y
+            return bar_x, bar_y, rect.width, rect.height  # Returning width & height to confirm detection
 
-        if best_bar:
-            absolute_x = region.x + best_bar.x + (best_bar.width // 2)  # Get center X
-            absolute_y = region.y + best_bar.y + (best_bar.height // 2)  # Get center Y
-            return absolute_x, absolute_y, best_bar.width  # Returning the width to confirm detection
-
-        print("No matching bar found!")
-        return 0, 0, 0
+        print("No bar detected!")
+        return 0, 0, 0, 0
 
     except Exception as e:
-        print("Error in bar detection: ",e)
-        return 0, 0, 0
+        print("Error in bar detection:", e)
+        return 0, 0, 0, 0
 def find_color(color_lower, color_upper, region, isBar_X=False): 
     screen = Screen()
     try:

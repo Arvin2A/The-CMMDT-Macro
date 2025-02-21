@@ -10,6 +10,10 @@ import subprocess
 import json
 import time
 # Get the directory where main.py is located
+if getattr(sys, 'frozen', False):  # Running from PyInstaller
+    BASE_DIR = sys._MEIPASS  # Temporary extraction folder
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, "macro.sikuli", "data.json")
 if os.path.exists(DATA_FILE):
