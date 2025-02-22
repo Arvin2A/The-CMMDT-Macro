@@ -9,6 +9,7 @@ from org.opencv.imgproc import Imgproc
 from java.awt.image import BufferedImage
 from javax.swing import JFrame
 from java.awt import Color
+from java.util import ArrayList
 Settings.MoveMouseDelay = 0.01
 Settings.ActionLogs=0
 #Debug.on(3)
@@ -108,7 +109,7 @@ def find_bar(region):
         Imgproc.threshold(gray, thresh, 200, 255, Imgproc.THRESH_BINARY)
 
         # Find contours
-        contours = java.util.ArrayList()
+        contours = ArrayList()
         hierarchy = Mat()
         Imgproc.findContours(thresh, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
 
@@ -121,12 +122,11 @@ def find_bar(region):
             if area > max_area:
                 max_area = area
                 largest_contour = contour
-
         # If a valid bar is found
         if largest_contour:
             rect = Imgproc.boundingRect(largest_contour)
-            bar_x = region.x + rect.x + (rect.width // 2)  # Center X
-            bar_y = region.y + rect.y + (rect.height // 2)  # Center Y
+            bar_x = region.x + rect.x + (rect.width / 2)  # Center X
+            bar_y = region.y + rect.y + (rect.height / 2)  # Center Y
             return bar_x, bar_y, rect.width, rect.height  # Returning width & height to confirm detection
 
         print("No bar detected!")
@@ -255,6 +255,8 @@ def Catch():
     frame_target = create_overlay(Color.WHITE)  
     bar_x = None
     target_x = None
+    bar_reg = Region(int(428.0*sf[0]),int(712.0*sf[1]),int(584.0*sf[0]),int(32.0*sf[1]))
+    bar_region = Region(int(428.0),int(712.0),int(584.0),int(32.0))
     while True:
         i += 1
         
@@ -262,8 +264,8 @@ def Catch():
         targetbarColor = Sets["Color_Fish"]
         userbarColor = Sets["Color_White"]
         target_x,target_y = search(targetbarColor, ReelingRegion)
-        bar_x,bar_y = search(userbarColor, ReelingRegion) 
-        #bar_x,bar_y = find_bar_by_length(ReelingRegion, result)
+        #bar_x,bar_y = search(userbarColor, ReelingRegion) 
+        bar_x,bar_y, w ,h = find_bar(bar_region)
 
         if target_x != 0:
             frame_target.setLocation(target_x, target_y)
@@ -306,6 +308,18 @@ def Catch():
                 mouseDown(Button.LEFT)
                 wait(skibidirizz/1000)
                 mouseUp(Button.LEFT)
+            else:
+                # Calculate the speed of target movement
+                if prev_target_x is not None:
+                    speed = abs(target_x - prev_target_x)
+                    deceleration_factor = max(1.0 - (speed / 100), 0.5)  # Adjust hold time based on speed
+                    
+                    # Apply the deceleration factor to the hold time
+                    skibidirizz *= deceleration_factor
+                
+                mouseDown(Button.LEFT)
+                wait(skibidirizz / 1000)
+                mouseUp(Button.LEFT)
         else:
             print("Target value not found")
     frame_bar.dispose() 
@@ -339,10 +353,14 @@ def NavigationShake():
     type("\\")
     while True:
         x,y = search(userbarColor, ReelingRegion)
-        type(Key.PAGE_DOWN)
+        keyDown(Key.PAGE_DOWN)
+        wait(0.2)
+        keyUp(Key.PAGE_DOWN)
         shake = Pattern("better_shake.png").similar(0.50)
         if exists(shake):
-            type(Key.ENTER) 
+            keyDown(Key.ENTER)
+            wait(0.2)
+            keyUp(Key.ENTER)
             wait(Latency)
         elif x != 0:
             print("CATCHING")
