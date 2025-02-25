@@ -1,81 +1,82 @@
 import time, os, math, sys, json
 from java.lang import System
+from java.lang import Math
 from nu.pattern import OpenCV
 OpenCV.loadShared()
 #from sikuli import *
-from org.opencv.core import Mat, Scalar, Core, CvType, Size, MatOfPoint
+from org.opencv.core import Mat, Scalar, Core, CvType, Size, MatOfPoint, MatOfByte
 from org.opencv.imgcodecs import Imgcodecs
 from org.opencv.imgproc import Imgproc
 from java.awt.image import BufferedImage
 from javax.swing import JFrame
-from java.awt import Color
+from java.awt import Color, Robot, Rectangle, Toolkit
 from java.util import ArrayList
+from java.io import ByteArrayOutputStream
+from javax.imageio import ImageIO
+import time, os, math, sys, json
+from java.lang import System 
 Settings.MoveMouseDelay = 0.01
 Settings.ActionLogs=0
 #Debug.on(3)
-data = None
-script_dir = os.getcwd()
-data_file = os.path.join(script_dir, "data.json")
-if os.path.exists(data_file):
-    print("exists")
-else:
-    raise FileNotFoundException("File not found: data.json")
-try:
-    with open(data_file, 'r') as file:
-        data = json.load(file)
-except:
-    try:
-        with open('macro.sikuli/data.json', 'r') as file:
-            data = json.load(file) 
-    except:
-        try:
-            with open('data.json', 'r') as file:
-                data = json.load(file) 
-        except Exception as e:
-            print("Error:",e)
-#How much time you want for the next shake. Ex. how much time you think will take to catch
-roblox = "Roblox"
-TimeEachLoop = 5
-Latency = data["ShakeSpeed"] # this is if ur computer is very laggy, mine is so it is half a second for each shake
-ShakeEnabled = data["ShakeEnabled"] # Enable if you have hasty enchant
-isClickShake = data["ClickShake"]
-IsLinux = data["IsLinux"]
-if IsLinux:
-    roblox = "Sober"
-running = True      
-#COLORS FOR FISCH DETECTION (WHITE_BAR, GREY_FISH_BAR)
-Sets = {
-    "Color_Fish" : {"0x434b5b": 3, "0x4a4a5c": 4, "0x47515d": 4},  
-    "Color_White" : {"0xFFFFFF": 15}, 
-    "Color_Bar" : {"0x848587": 4, "0x787773": 4, "0x7a7873": 4}
-}
-isShaking = False
-isCatching = False
-def runHotKey(event):
-    global running
-    print("pressedhotkey")
-    running = False
-#In this case, this is CTRL+X which is if you want to stop the program (stop after any sequence, not in between)
-Env.addHotkey("x",KeyModifier.CTRL,runHotKey)    
-r = switchApp(roblox)
-ch = App(roblox)
-#SCALING SIZES FOR COMPATIBILITY
-RobloxWindowRegion = Region(App(roblox).focusedWindow())
-ReferenceResolution = [1440,875]
-UR = [RobloxWindowRegion.w,RobloxWindowRegion.h]
-sf = [float(UR[0])/1920.0,float(UR[1])/1200.0]
-#REGIONS:
-print(UR[0], UR[1])
-print(sf[0],sf[1])
-#mainfactor = math.sqrt((float(UR[0]) * float(UR[1])) / (1920 * 1200))
-#print(mainfactor)
+SCRIPT_DIR = os.path.join(os.path.dirname(getBundlePath()), "macro.sikuli")
+DATA_FILE = os.path.join(SCRIPT_DIR, "data.json")
 
-#Settings.AlwaysResize = mainfactor
-ReelingRegion = Region(int(561.0*sf[0]),int(1027.0*sf[1]),int(807.0*sf[0]),int(3.0*sf[1]))
-print("NOTE***YOUR RESOLUTION MUST BE 1920x1200 FOR THIS TO WORK! IF NOT, SELECT A BIGGER RESOLUTION AND SCALE THE ROBLOX WINDOW TO 1440x900")
-#DETERMINE YOUR RESOLUTION HERE:
-#NOTE* FOR USERS WITH A 1440x900 RESOLUTION, 1440x875 IS JUST NO FULLSCREEN BUT FILLS ENTIRE SCREEN
-#Process
+# Load data from JSON file
+data = None
+if os.path.exists(DATA_FILE):
+    try:
+        with open(DATA_FILE, 'r') as file:
+            data = json.load(file)
+    except Exception as e:
+        print("Error loading data.json: ".format(e))
+else:
+    print("File not found: data.json")
+
+# Configuration from JSON
+ROBLOX = "Roblox" if not data.get("IsLinux", False) else "Sober"
+TIME_EACH_LOOP = 5
+LATENCY = data.get("ShakeSpeed", 0.5)
+SHAKE_ENABLED = data.get("ShakeEnabled", True)
+IS_CLICK_SHAKE = data.get("ClickShake", True)
+
+# Color sets for detection
+COLOR_SETS = {
+    "Color_Fish": {"0x434b5b": 3, "0x4a4a5c": 4, "0x47515d": 4},
+    "Color_White": {"0xFFFFFF": 15},
+    "Color_Bar": {"0x848587": 4, "0x787773": 4, "0x7a7873": 4}
+}
+
+# Global flags
+running = True
+is_shaking = False
+is_catching = False
+
+# Hotkey to stop the script
+def run_hotkey(event):
+    global running
+    print("Hotkey pressed: Stopping script.")
+    running = False
+
+Env.addHotkey("x", KeyModifier.CTRL, run_hotkey)
+
+# Initialize Roblox window
+roblox_app = App(ROBLOX)
+roblox_window_region = Region(roblox_app.focusedWindow())
+
+# Scaling factors for compatibility
+REFERENCE_RESOLUTION = [1440, 875]
+CURRENT_RESOLUTION = [roblox_window_region.w, roblox_window_region.h]
+SCALE_FACTOR = [float(CURRENT_RESOLUTION[0]) / 1920.0, float(CURRENT_RESOLUTION[1]) / 1200.0]
+
+# Reeling region
+REELING_REGION = Region(
+    int(561.0 * SCALE_FACTOR[0]),
+    int(1027.0 * SCALE_FACTOR[1]),
+    int(807.0 * SCALE_FACTOR[0]),
+    int(3.0 * SCALE_FACTOR[1])
+)
+
+# Overlay for debugging
 def create_overlay(color, width=20, height=35):
     frame = JFrame()
     frame.setSize(width, height)
@@ -84,307 +85,320 @@ def create_overlay(color, width=20, height=35):
     frame.getContentPane().setBackground(color)
     frame.setVisible(True)
     return frame
-def find_bar(region):
-    screen = Screen()
-    try:
-        captured_image = screen.capture(region)
-        buffered_image = captured_image.getImage()
-        height = buffered_image.getHeight()
-        width = buffered_image.getWidth()
 
-        # Convert BufferedImage to Mat
-        mat_image = Mat(height, width, CvType.CV_8UC3)
-        raster = buffered_image.getRaster()
-        for x in range(width):
-            for y in range(height):
-                r, g, b = raster.getPixel(x, y, None)[:3]
-                mat_image.put(y, x, [float(b), float(g), float(r)])
+# Fish bar detector class
+class FishBarDetector:
+    def __init__(self):
+        self.window_width = CURRENT_RESOLUTION[0]
+        self.window_height = CURRENT_RESOLUTION[1]
+        x1, x2 = int(self.window_width / 3.3), int(self.window_width / 1.43)
+        y1, y2 = int(self.window_height / 1.20), int(self.window_height / 1.15)
+        print()
+        print(x1,x2,y1,y2)
+        #self.region = Region(min(x1, x2), min(y1, y2), abs(x2 - x1), abs(y2 - y1))
+        self.region = Region(421,698,593,58)
+        # Color detection setup
+        hex_color = "#414c5b"
+        bgr_color = tuple(int(hex_color[i:i+2], 16) for i in (1, 3, 5))
+        bgr_color = (bgr_color[2], bgr_color[1], bgr_color[0])
+        bgr_mat = Mat(1, 1, CvType.CV_8UC3, Scalar(*bgr_color))
+        hsv_mat = Mat()
+        Imgproc.cvtColor(bgr_mat, hsv_mat, Imgproc.COLOR_BGR2HSV)
+        hsv_color = list(hsv_mat.get(0, 0))
 
-        # Convert to grayscale
-        gray = Mat()
-        Imgproc.cvtColor(mat_image, gray, Imgproc.COLOR_BGR2GRAY)
+        hex_tolerance, white_tolerance = 12, 4
+        self.lower_bound = Scalar(max(0, hsv_color[0] - hex_tolerance),
+                                 max(0, hsv_color[1] - hex_tolerance),
+                                 max(0, hsv_color[2] - hex_tolerance))
+        self.upper_bound = Scalar(min(179, hsv_color[0] + hex_tolerance),
+                                 min(255, hsv_color[1] + hex_tolerance),
+                                 min(255, hsv_color[2] + hex_tolerance))
+        self.lower_white = Scalar(0, 0, 255 - white_tolerance)
+        self.upper_white = Scalar(255, white_tolerance, 255)
+        self.min_fish_height = 20
+        self.last_known_bar = None
+        self.last_bar_detection_time = None
+    def _capture_screen(self, region=None):
+        robot = Robot()
+        if region:
+            return robot.createScreenCapture(Rectangle(region.x, region.y, region.w, region.h))
+        else:
+            screen_size = Toolkit.getDefaultToolkit().getScreenSize()
+            return robot.createScreenCapture(Rectangle(screen_size))
 
-        # Apply threshold to isolate the bar
-        thresh = Mat()
-        Imgproc.threshold(gray, thresh, 200, 255, Imgproc.THRESH_BINARY)
+    def _convert_to_mat(self, buffered_image):
+        baos = ByteArrayOutputStream()
+        ImageIO.write(buffered_image, "png", baos)
+        byte_array = baos.toByteArray()
+        mat_of_byte = MatOfByte(byte_array)
+        return Imgcodecs.imdecode(mat_of_byte, Imgcodecs.IMREAD_COLOR)
 
-        # Find contours
-        contours = ArrayList()
-        hierarchy = Mat()
-        Imgproc.findContours(thresh, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
-
-        # Find the largest contour (assuming it's the bar)
-        largest_contour = None
-        max_area = 0
-
-        for contour in contours:
-            area = Imgproc.contourArea(contour)
-            if area > max_area:
-                max_area = area
-                largest_contour = contour
-        # If a valid bar is found
-        if largest_contour:
-            rect = Imgproc.boundingRect(largest_contour)
-            bar_x = region.x + rect.x + (rect.width / 2)  # Center X
-            bar_y = region.y + rect.y + (rect.height / 2)  # Center Y
-            return bar_x, bar_y, rect.width, rect.height  # Returning width & height to confirm detection
-
-        print("No bar detected!")
-        return 0, 0, 0, 0
-
-    except Exception as e:
-        print("Error in bar detection:", e)
-        return 0, 0, 0, 0
-def find_color(color_lower, color_upper, region, isBar_X=False): 
-    screen = Screen()
-    try:
-        captured_image = screen.capture(region)
-        buffered_image = captured_image.getImage()   
-        height = buffered_image.getHeight() 
-        width = buffered_image.getWidth()
-        
-        mat_image = Mat(height, width, CvType.CV_8UC3)
-        raster = buffered_image.getRaster()
-        for x in range(width):
-            for y in range(height):
-                r,g,b = raster.getPixel(x,y,None)[:3]
-                data = [float(b),float(g),float(r)]
-                mat_image.put(y,x,data)
-        lower_bound = Scalar(color_lower[0], color_lower[1], color_lower[2])
-        upper_bound = Scalar(color_upper[0], color_upper[1], color_upper[2])
-        mask = Mat()
-        Core.inRange(mat_image, lower_bound, upper_bound, mask)
-        pts = MatOfPoint()
-        Core.findNonZero(mask, pts)
-        detectedlocation = []
-        if isBar_X:
-            if pts.rows()>0:
-                point = pts.toList()[0]
-                x, y = float(point.x), float(point.y)   
-                absolute_x = region.x + x
-                absolute_y = region.y + y          
-                return int(absolute_x), int(absolute_y)
+    def _merge_boxes(self, boxes, min_distance=20):
+        if not boxes:
+            return []
+        boxes = sorted(boxes, key=lambda b: b[0])
+        merged_boxes = [boxes[0]]
+        for box in boxes[1:]:
+            last_box = merged_boxes[-1]
+            if box[0] <= last_box[0] + last_box[2] + min_distance:
+                merged_box = (
+                    min(last_box[0], box[0]),
+                    min(last_box[1], box[1]),
+                    max(last_box[0] + last_box[2], box[0] + box[2]) - min(last_box[0], box[0]),
+                    max(last_box[1] + last_box[3], box[1] + box[3]) - min(last_box[1], box[1]),
+                )
+                merged_boxes[-1] = merged_box
             else:
-                print("No pixel of color in range!")
-        if pts.rows()>0:
-            point = pts.toList()[0]
-            x, y = float(point.x), float(point.y)   
-            absolute_x = region.x + x
-            absolute_y = region.y + y          
-            return int(absolute_x), int(absolute_y)
-        else:
-            print("No pixel of color in range!")
-            #i have to make my own function and meanwhile ahk has this already
-            
-    except Exception as e:
-        print("it did NOT work: {}".format(e))
-    return 0,0
-def search(target, region, isBar_x=False):
-    timeNow = time.time()
-    for color_hex, variation in target.items():
-        color_rgb = (
-            int(color_hex[2:4], 16),  # R
-            int(color_hex[4:6], 16),  # G
-            int(color_hex[6:], 16)   # B
-        )
-        
-        lower_bound = (
-            max(0, color_rgb[2] - variation),
-            max(0, color_rgb[1] - variation),
-            max(0, color_rgb[0] - variation)
-        )
-        upper_bound = (
-            min(255, color_rgb[2] + variation),
-            min(255, color_rgb[1] + variation),
-            min(255, color_rgb[0] + variation)
-        )
-        if not isBar_x:
-            x,y = find_color(lower_bound, upper_bound, region)
-        else:
-            x,y = find_color(lower_bound, upper_bound, region, True)
-        if x != 0:
-            print("TIME ELAPSED: {:.2f} ms".format((time.time()-timeNow)*1000))
-            print("----------------- FOUND PIXEL! -------------------")
-            return x,y
-    return 0,0
+                merged_boxes.append(box)
+        return merged_boxes
 
-def timeToHold(pixel,scale_factor):
-    data = [
-        [0, 0], [16, 0], [54, 75], [132, 125], [217, 180], [365, 280], [450, 320], 
-        [534, 375], [632, 440], [736, 500], [817, 600], [900, 700], 
-        [997, 770], [1081, 835], [1164, 900], [1250, 2200], 
-        [1347, 2400], [1448, 2600], [1531, 2800], [1531, 9999]
-    ]
-    
-    for pair in data:
-        pair[0] = int(pair[0] * scale_factor)
-    
-    lower = None
-    upper = None
-    for i in range(len(data)):
-        if pixel < data[i][0]:
-            lower = data[i - 1]
-            upper = data[i]
-            break
+    def _get_combined_box(self, boxes):
+        if not boxes:
+            return None
+        x_min = min(box[0] for box in boxes)
+        y_min = min(box[1] for box in boxes)
+        x_max = max(box[0] + box[2] for box in boxes)
+        y_max = max(box[1] + box[3] for box in boxes)
+        return (x_min, y_min, x_max - x_min, y_max - y_min)
 
-    if lower is None or upper is None:
-        raise ValueError("Pixel value out of range.")
+    def find_objects(self):
+        try:
+            start = time.time()  # Initialize 'start' for timing
+            screenshot = self._capture_screen(self.region)
+            frame = self._convert_to_mat(screenshot)
+            hsv_frame = Mat()
+            Imgproc.cvtColor(frame, hsv_frame, Imgproc.COLOR_BGR2HSV)
 
-    hold = lower[1] + (pixel - lower[0]) * (upper[1] - lower[1]) / (upper[0] - lower[0])
+            # Detect Fish (Red Box)
+            mask_hex_color = Mat()
+            Core.inRange(hsv_frame, self.lower_bound, self.upper_bound, mask_hex_color)
+            contours_hex = ArrayList()
+            Imgproc.findContours(mask_hex_color, contours_hex, Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
 
-    print("Hold: {:.2f} ms".format(hold))
+            largest_hex = None
+            max_area = 0
+            for contour in contours_hex:
+                rect = Imgproc.boundingRect(contour)
+                if rect.height >= self.min_fish_height:
+                    area = rect.width * rect.height
+                    if area > max_area:
+                        max_area = area
+                        largest_hex = rect
 
-    return hold
+            fish = None
+            if largest_hex:
+                x, y, w, h = largest_hex.x, largest_hex.y, largest_hex.width, largest_hex.height
+                # Convert to absolute screen coordinates
+                fish = (self.region.x + x + w // 2, self.region.y + y + h // 2)
+
+            # Detect Bar (Green Box)
+            mask_white = Mat()
+            Core.inRange(hsv_frame, self.lower_white, self.upper_white, mask_white)
+            contours_white = ArrayList()
+            Imgproc.findContours(mask_white, contours_white, Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
+
+            white_boxes = []
+            for contour in contours_white:
+                rect = Imgproc.boundingRect(contour)
+                if rect.width > 50:
+                    white_boxes.append((rect.x, rect.y, rect.width, rect.height))
+
+            merged_white_boxes = self._merge_boxes(white_boxes)
+            combined_box = self._get_combined_box(merged_white_boxes)
+            bar = None
+            if combined_box:
+                x, y, w, h = combined_box
+                # Convert to absolute screen coordinates
+                bar = (self.region.x + x + w // 2, self.region.y + y + h // 2)
+            print("Fish:", fish, "Bar:", bar, "Time Elapsed:", time.time() - start)
+            time.sleep(0.01)
+
+            if fish is None and bar is None:
+                return (0, 0), (0, 0)
+            elif bar is None:
+                return fish, (0, 0)
+            elif fish is None:
+                return (0, 0), bar
+            return fish, bar
+
+        except Exception as e:
+            print("Error in find_objects: {}".format(e))
+            return (0, 0), (0, 0)
+
 def Catch():
     start_time = time.time()
-    #MaxHold calculation:
+    e_time = time.time()
     prev_target_x = None
     stationary_start_time = None
-    three_quarter_mark = ReelingRegion.x + (ReelingRegion.w * 0.58)
-    
-    timeout = 1.75
-    control = data["Control"]
-    result = round((UR[1] / 247.03) * (control * 100) + (UR[1] / 8.2759), 0)
-    i = 0
-    print("Iteration",i) 
-    #Maxhold is to hold until the fish is beyond the control range
-    #
+    three_quarter_mark = REELING_REGION.x + (REELING_REGION.w * 0.85)
+    timeout = 2
+    count = 0 
+    control = data.get("Control", 1.0)  # Default to 1.0 if missing
+    result = round((CURRENT_RESOLUTION[1] / 247.03) * (control * 100) + (CURRENT_RESOLUTION[1] / 8.2759), 0)
+    # Create an instance of FishBarDetector
+    detector = FishBarDetector()
+
+    # Overlays for debugging
+    frame_bar = create_overlay(Color.BLACK)  # Tracks bar position
+    frame_target = create_overlay(Color.WHITE)  # Tracks fish/target position
+
     last_valid_target_x = None
     last_valid_bar_x = None
-    frame_bar = create_overlay(Color.BLACK)      # Tracks bar_x
-    frame_target = create_overlay(Color.WHITE)  
-    bar_x = None
-    target_x = None
-    bar_reg = Region(int(428.0*sf[0]),int(712.0*sf[1]),int(584.0*sf[0]),int(32.0*sf[1]))
-    bar_region = Region(int(428.0),int(712.0),int(584.0),int(32.0))
-    while True:
-        i += 1
-        
-        print("-----------------TEST-----------------")
-        targetbarColor = Sets["Color_Fish"]
-        userbarColor = Sets["Color_White"]
-        target_x,target_y = search(targetbarColor, ReelingRegion)
-        #bar_x,bar_y = search(userbarColor, ReelingRegion) 
-        bar_x,bar_y, w ,h = find_bar(bar_region)
 
-        if target_x != 0:
-            frame_target.setLocation(target_x, target_y)
-            start_time = time.time()
-            last_valid_target_x = target_x 
+    while True:
+        if running == False:
+            return
+        print("-----------------TEST-----------------")
+
+        # Use FishBarDetector to find fish and bar positions
+        fish, bar = detector.find_objects()
+
+        # Extract x values (fallback to 0 if not detected)
+        target_x = fish[0] if fish else 0
+        target_y = fish[1] if fish else 0
+
+        bar_x = bar[0] if bar else 0
+        bar_y = bar[1] if bar else 0
+
+        if target_x == 0:
+            count += 1
+            if count == 5: 
+                break
+        # Handle missing positions (use last valid if available)
         if target_x == 0 and last_valid_target_x is not None:
             target_x = last_valid_target_x
-        
         if bar_x == 0 and last_valid_bar_x is not None:
             bar_x = last_valid_bar_x
+
+        # Check if target is stationary at the 3/4 mark
         if target_x > three_quarter_mark:
-            if prev_target_x is not None:
-                # Check if the target is stationary (small movement over time)
-                if abs(target_x - prev_target_x) < 30:  # Small movement threshold
-                    if stationary_start_time is None:
-                        stationary_start_time = time.time()
-                    # Hold the mouse if stationary for 1 second
-                    if time.time() - stationary_start_time >= 1:
-                        mouseDown(Button.LEFT)
-                        print("Mouse held at 3/4 mark until target moves...")
-                else:
-                    stationary_start_time = None  # Reset if it's not stationary
+            if prev_target_x is not None and abs(target_x - prev_target_x) < 30:  # Small movement threshold
+                if stationary_start_time is None:
+                    stationary_start_time = time.time()
+                # Hold the mouse if stationary for 1 second
+                if time.time() - stationary_start_time >= 1:
+                    print("Mouse held at 3/4 mark until target moves...")
+                    mouseDown(Button.LEFT)
+                    continue
+            else:
+                stationary_start_time = None  # Reset if target moves
             prev_target_x = target_x
         else:
             stationary_start_time = None  # Reset if target moves before 3/4 mark
-            mouseUp(Button.LEFT)    
-        if bar_x != 0:
-            frame_bar.setLocation(int(bar_x),int(bar_y))
-            bar_x,bar_y = search(Sets["Color_Bar"], ReelingRegion)
-            #bar_x += round(result * 0.5) 
-            last_valid_bar_x = bar_x 
+            mouseUp(Button.LEFT)
+
+        # Timeout check
         if time.time() - start_time > timeout:
             print("Loop timed out. Exiting...")
             break
+
+        # Update overlays and handle mouse actions
         if target_x != 0:
-            if target_x > bar_x:
-                dist = target_x - bar_x
-                print(dist, target_x, bar_x)
-                skibidirizz = timeToHold(dist,sf[0])
+            count = 0
+            frame_target.setLocation(int(target_x), int(target_y))
+            start_time = time.time()
+            last_valid_target_x = target_x
+
+            frame_bar.setLocation(int(bar_x), int(bar_y))
+            last_valid_bar_x = bar_x
+
+            # Calculate distance between target and bar
+            distance = target_x - bar_x
+            close_threshold = 30
+            left_threshold = -100
+            right_threshold = 100
+
+            # Adjust mouse based on distance
+            if distance > right_threshold:
                 mouseDown(Button.LEFT)
-                wait(skibidirizz/1000)
+            elif distance < left_threshold:
+                mouseDown(Button.LEFT)
+                time.sleep(0.025)
+                mouseUp(Button.LEFT)
+            elif distance < 12.5:
+                mouseDown(Button.LEFT)
+                time.sleep(0.003)
                 mouseUp(Button.LEFT)
             else:
-                # Calculate the speed of target movement
-                if prev_target_x is not None:
-                    speed = abs(target_x - prev_target_x)
-                    deceleration_factor = max(1.0 - (speed / 100), 0.5)  # Adjust hold time based on speed
-                    
-                    # Apply the deceleration factor to the hold time
-                    skibidirizz *= deceleration_factor
-                
                 mouseDown(Button.LEFT)
-                wait(skibidirizz / 1000)
+                time.sleep(0.05)
                 mouseUp(Button.LEFT)
         else:
-            print("Target value not found")
-    frame_bar.dispose() 
+            print("Target value not found: Count = {}".format(count))
+            if count == 5: 
+                break
+    
+    # Clean up overlays
+    frame_bar.dispose()
     frame_target.dispose()
-    return  
+    return
+# Shake Functions
 def ClickShake():
-    global Latency
-    userbarColor = Sets["Color_Fish"]
+    global LATENCY
+    userbarColor = COLOR_SETS["Color_White"]
     screen = Screen()
-    while True: 
-        x,y = search(userbarColor, ReelingRegion)
-        shake = Pattern("better_shake.png").similar(0.50)
-        if exists(shake):
-            try:  
+    while True:
+        x, y = search(userbarColor, REELING_REGION)
+        shake = Pattern("shake.png").similar(0.50)
+        if exists(shake, 1):
+            try:
                 click(shake)
-            except:         
-                wait(Latency)
+            except:
+                time.sleep(LATENCY)
         elif x != 0:
             print("CATCHING")
-            isShaking = False
-            return True
+            global is_shaking
+            is_shaking = False
+            break
         else:
             print("FAILED")
-            isShaking = False
-            return True
+            is_shaking = False
+            break
     return True
+
 def NavigationShake():
-    global Latency
-    userbarColor = Sets["Color_Fish"]
+    global LATENCY
+    userbarColor = COLOR_SETS["Color_White"]
     screen = Screen()
     type("\\")
     while True:
-        x,y = search(userbarColor, ReelingRegion)
+        x, y = search(userbarColor, REELING_REGION)
         keyDown(Key.PAGE_DOWN)
-        wait(0.2)
+        wait(0.5)
         keyUp(Key.PAGE_DOWN)
         shake = Pattern("better_shake.png").similar(0.50)
         if exists(shake):
             keyDown(Key.ENTER)
-            wait(0.2)
+            wait(0.4)
             keyUp(Key.ENTER)
-            wait(Latency)
+            wait(LATENCY)
+        elif not exists(shake):
+            type("\\")
+            return True
         elif x != 0:
             print("CATCHING")
             type("\\")
             return True
         else:
             print("FAILED")
-            isShaking = False
+            global is_shaking
+            is_shaking = False
             return True
-while(running):
-    App.focus(roblox)
+
+# Main loop
+while running:
+    App.focus(ROBLOX)
     mouseDown(Button.LEFT)
-    wait(data["CastDuration"])
+    time.sleep(data.get("CastDuration", 1.0))
     mouseUp(Button.LEFT)
-    wait(0.5)
-    isShaking = True
-    #WARNING: SHAKE ONLY WORKS WITH RESOLUTIONS 1920x1200 AS OF NOW. DONT USE SHAKE UNLESS YOU HAVE THIS RESOLUTION!
-    if not ShakeEnabled and isClickShake:
-        hasFinishedShake = ClickShake()
-    elif not ShakeEnabled and not isClickShake:
-        hasFinishedShake = NavigationShake()
-    else:
-        hasFinishedShake = True
-    if hasFinishedShake == True:
-        wait(1.5)
-        print("User Is Catching...")
-        DetectionConsistency = Catch()
+    time.sleep(0.5)
+    e = True
+    if SHAKE_ENABLED:
+        if IS_CLICK_SHAKE:
+            e = ClickShake()
+        else:
+            e = NavigationShake()
+    if e == True:
+        time.sleep(1.5)
+        print("User is catching...")
+        Catch()
