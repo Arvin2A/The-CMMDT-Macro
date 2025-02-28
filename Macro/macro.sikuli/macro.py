@@ -61,8 +61,23 @@ Env.addHotkey("x", KeyModifier.CTRL, run_hotkey)
 
 # Initialize Roblox window
 roblox_app = App(ROBLOX)
-roblox_window_region = Region(roblox_app.focusedWindow())
 
+# Check if Roblox is running
+if not roblox_app.isRunning():
+    print("Roblox is not running. Please start Roblox first.")
+    exit(1)
+
+# Focus the Roblox window
+switchApp(ROBLOX)
+
+# Get the focused window
+roblox_window = roblox_app.focusedWindow()
+if roblox_window is None:
+    print("Failed to focus Roblox window. Please ensure it is open and visible.")
+    exit(1)
+
+# Create the region
+roblox_window_region = Region(roblox_window)
 # Scaling factors for compatibility
 REFERENCE_RESOLUTION = [1440, 875]
 CURRENT_RESOLUTION = [roblox_window_region.w, roblox_window_region.h]
@@ -209,14 +224,16 @@ class FishBarDetector:
             if combined_box:
                 x, y, w, h = combined_box
                 # Convert to absolute screen coordinates
-                bar = (self.region.x + x + w // 2, self.region.y + y + h // 2)
+                left_width = x + w // 2 - (x)  # Distance from left edge to center
+                right_width = (x + w) - x + w // 2
+                bar = (self.region.x + x + w // 2, self.region.y + y + h // 2,w,h)
             print("Fish:", fish, "Bar:", bar, "Time Elapsed:", time.time() - start)
             time.sleep(0.01)
 
             if fish is None and bar is None:
-                return (0, 0), (0, 0)
+                return (0, 0), (0, 0,0,0)
             elif bar is None:
-                return fish, (0, 0)
+                return fish, (0, 0,0,0)
             elif fish is None:
                 return (0, 0), bar
             return fish, bar
@@ -224,15 +241,15 @@ class FishBarDetector:
         except Exception as e:
             print("Error in find_objects: {}".format(e))
             return (0, 0), (0, 0)
-
+count = 0
 def Catch():
+    global count
     start_time = time.time()
     e_time = time.time()
     prev_target_x = None
     stationary_start_time = None
     three_quarter_mark = REELING_REGION.x + (REELING_REGION.w * 0.85)
     timeout = 2
-    count = 0 
     control = data.get("Control", 1.0)  # Default to 1.0 if missing
     result = round((CURRENT_RESOLUTION[1] / 247.03) * (control * 100) + (CURRENT_RESOLUTION[1] / 8.2759), 0)
     # Create an instance of FishBarDetector
@@ -244,9 +261,12 @@ def Catch():
 
     last_valid_target_x = None
     last_valid_bar_x = None
+    last_valid_bar = None
 
     while True:
         if running == False:
+            frame_bar.dispose()
+            frame_target.dispose()
             return
         print("-----------------TEST-----------------")
 
@@ -261,15 +281,29 @@ def Catch():
         bar_y = bar[1] if bar else 0
 
         if target_x == 0:
-            count += 1
-            if count == 5: 
+            count = count + 1
+            print("COUNTED POINT:",count)
+            if count >= 5: 
                 break
+        else:
+            count = 0
         # Handle missing positions (use last valid if available)
         if target_x == 0 and last_valid_target_x is not None:
             target_x = last_valid_target_x
-        if bar_x == 0 and last_valid_bar_x is not None:
+        if bar_x == 0 and last_valid_bar is not None:
             bar_x = last_valid_bar_x
+            bar_y = last_valid_bar[2] if last_valid_bar else 0
+            bar = last_valid_bar
+            
+        if target_x != 0:
+            frame_target.setLocation(int(target_x), int(target_y))
+            start_time = time.time()
+            last_valid_target_x = target_x
 
+            
+            if bar_x != 0:
+                frame_bar.setLocation(int(bar_x), int(bar_y))
+                last_valid_bar_x = bar_x
         # Check if target is stationary at the 3/4 mark
         if target_x > three_quarter_mark:
             if prev_target_x is not None and abs(target_x - prev_target_x) < 30:  # Small movement threshold
@@ -288,44 +322,47 @@ def Catch():
             mouseUp(Button.LEFT)
 
         # Timeout check
-        if time.time() - start_time > timeout:
-            print("Loop timed out. Exiting...")
-            break
+        #if time.time() - start_time > timeout:
+            #print("Loop timed out. Exiting...")
+            #break
 
         # Update overlays and handle mouse actions
         if target_x != 0:
-            count = 0
             frame_target.setLocation(int(target_x), int(target_y))
             start_time = time.time()
             last_valid_target_x = target_x
 
-            frame_bar.setLocation(int(bar_x), int(bar_y))
-            last_valid_bar_x = bar_x
+            
+            if bar_x != 0:
+                frame_bar.setLocation(int(bar_x), int(bar_y))
+                last_valid_bar_x = bar_x
 
             # Calculate distance between target and bar
             distance = target_x - bar_x
-            close_threshold = 30
-            left_threshold = -100
-            right_threshold = 100
+            close_threshold = 15 * (bar[2]/60)
+            left_threshold = -50 * (bar[2]/60)
+            right_threshold = 50 * (bar[2]/60)
+            print(left_threshold,right_threshold,close_threshold,distance)
 
             # Adjust mouse based on distance
-            if distance > right_threshold:
+            if distance >= right_threshold:
                 mouseDown(Button.LEFT)
-            elif distance < left_threshold:
+            elif distance <= left_threshold:
                 mouseDown(Button.LEFT)
-                time.sleep(0.025)
+                time.sleep(distance/10000)
                 mouseUp(Button.LEFT)
-            elif distance < 12.5:
+                time.sleep(distance/1000)
+            elif distance < close_threshold:
+                mouseDown(Button.LEFT)
+                time.sleep(0.01)
+                mouseUp(Button.LEFT)
+            elif distance > close_threshold:
                 mouseDown(Button.LEFT)
                 time.sleep(0.003)
                 mouseUp(Button.LEFT)
-            else:
-                mouseDown(Button.LEFT)
-                time.sleep(0.05)
-                mouseUp(Button.LEFT)
         else:
             print("Target value not found: Count = {}".format(count))
-            if count == 5: 
+            if count >= 5: 
                 break
     
     # Clean up overlays
@@ -337,21 +374,18 @@ def ClickShake():
     global LATENCY
     userbarColor = COLOR_SETS["Color_White"]
     screen = Screen()
+    detection = FishBarDetector()
     while True:
-        x, y = search(userbarColor, REELING_REGION)
         shake = Pattern("shake.png").similar(0.50)
         if exists(shake, 1):
             try:
                 click(shake)
-            except:
                 time.sleep(LATENCY)
-        elif x != 0:
+            except:
+                pass
+        else:
             print("CATCHING")
             global is_shaking
-            is_shaking = False
-            break
-        else:
-            print("FAILED")
             is_shaking = False
             break
     return True
@@ -360,9 +394,10 @@ def NavigationShake():
     global LATENCY
     userbarColor = COLOR_SETS["Color_White"]
     screen = Screen()
+    detection = FishBarDetector()
     type("\\")
     while True:
-        x, y = search(userbarColor, REELING_REGION)
+        fish, bar = detection.find_objects()
         keyDown(Key.PAGE_DOWN)
         wait(0.5)
         keyUp(Key.PAGE_DOWN)
@@ -375,7 +410,7 @@ def NavigationShake():
         elif not exists(shake):
             type("\\")
             return True
-        elif x != 0:
+        elif fish[1] != 0:
             print("CATCHING")
             type("\\")
             return True
@@ -386,6 +421,7 @@ def NavigationShake():
             return True
 
 # Main loop
+
 while running:
     App.focus(ROBLOX)
     mouseDown(Button.LEFT)
